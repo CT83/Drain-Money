@@ -17,6 +17,7 @@ contract DrainMoney {
         address owner;
         address[] poolMembers;
     }
+    // Pool should store start date, and term
 
     mapping(address => Pool) poolsToAddress;
     mapping(uint256 => uint256) passToPool;
@@ -49,7 +50,6 @@ contract DrainMoney {
         emit NewPool(id, msg.sender);
     }
 
-    //function join_pool(address, passphrase){}
     function join_pool(string memory _passphrase) public returns (bool) {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
         for (uint256 id = 0; id < pools.length; id++) {
@@ -61,7 +61,6 @@ contract DrainMoney {
         return false;
     }
 
-    //func. view_pool_details balance
     function getPoolDetails(string memory _passphrase)
         public
         view
@@ -95,6 +94,12 @@ contract DrainMoney {
     //func. invest_pool(address) {check if sender is a member of the pool}
 
     //func. mark_pool_defaulters(address, passphrase){}
+
+    //func. auto cashout all if date is 30th
+    
+    //func. cashout_all(force) only owner can cashout_all, fails if cool down not passed
+
+    //func. cashout(){cashes out only the single user}
 
     function getBalance() public view returns (uint256) {
         return address(this).balance;
