@@ -1,0 +1,23 @@
+{
+  "name": "drain-money",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CT83/Drain-Money.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CT83/Drain-Money/issues"
+  },
+  "homepage": "https://github.com/CT83/Drain-Money#readme",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "web3": "^1.2.9"
+  }
+}
