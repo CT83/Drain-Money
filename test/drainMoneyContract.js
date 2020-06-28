@@ -33,19 +33,18 @@ contract("DrainMoney", accounts => {
 
 
 contract("DrainMoney", accounts => {
-    it("creates a pool and returns pool address", async () => {
+    it("creates a pool and get details", async () => {
         const DMContract = await DrainMoney.deployed();
         assert(DMContract.address !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, 1, { from: accounts[0] });
+        await DMContract.create_pool("StrongPassPhrase", 5, 1, 100,100, { from: accounts[0] });
 
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("StrongPassPhrase", { from: accounts[0] });
         assert(resPoolDets[0] == accounts[0]);
-        assert(resPoolDets[1] == 5);
-        assert(resPoolDets[2] == 1);
-        assert(typeof (resPoolDets[3].toNumber()) == typeof (1));
+        assert(resPoolDets[1] == 1);
+        assert(typeof (resPoolDets[2].toNumber()) == typeof (1));
     })
 })
 
@@ -55,7 +54,7 @@ contract("DrainMoney", accounts => {
         assert(DMContract.address !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, 1, { from: accounts[0] });
+        await DMContract.create_pool("StrongPassPhrase", 5, 1, 100,100, { from: accounts[0] });
 
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("WrongPassPhrase", { from: accounts[0] });
@@ -70,7 +69,7 @@ contract("DrainMoney", accounts => {
         assert(DMContract.address !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, 1, { from: accounts[0] });
+        await DMContract.create_pool("StrongPassPhrase", 5, 1, 100,100, { from: accounts[0] });
 
         //join a pool
         await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
@@ -78,8 +77,8 @@ contract("DrainMoney", accounts => {
 
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("StrongPassPhrase", { from: accounts[0] });
-        assert(resPoolDets[4][0] == accounts[1]);
-        assert(resPoolDets[4][1] == accounts[2]);
+        assert(resPoolDets[3][0] == accounts[1]);
+        assert(resPoolDets[3][1] == accounts[2]);
     })
 })
 

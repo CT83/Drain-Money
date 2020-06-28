@@ -16,8 +16,10 @@ contract DrainMoney {
         uint256 totalBalance;
         address owner;
         address[] poolMembers;
+        uint256 startTime;
+        uint256 term;
+        uint256 frequency;
     }
-    // Pool should store start date, and term
 
     mapping(address => Pool) poolsToAddress;
     mapping(uint256 => uint256) passToPool;
@@ -34,7 +36,9 @@ contract DrainMoney {
     function create_pool(
         string memory _passphrase,
         uint256 _maxMembers,
-        uint256 _fixedInvestment
+        uint256 _fixedInvestment,
+        uint256 _term,
+        uint256 _frequency
     ) public {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
         Pool memory _pool = Pool(
@@ -43,7 +47,10 @@ contract DrainMoney {
             _fixedInvestment,
             0,
             msg.sender,
-            new address[](0)
+            new address[](0),
+            now,
+            _term,
+            _frequency
         );
         uint256 id = pools.push(_pool) - 1;
         passToPool[id] = _hashPass;
@@ -68,24 +75,30 @@ contract DrainMoney {
             address,
             uint256,
             uint256,
+            address[] memory,
             uint256,
-            address[] memory
+            uint256,
+            uint256
         )
     {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
         for (uint256 id = 0; id < pools.length; id++) {
             if (passToPool[id] == _hashPass) {
                 address _owner = pools[id].owner;
-                uint256 _maxMembers = pools[id].maxMembers;
                 uint256 _fixedInvestment = pools[id].fixedInvestment;
                 uint256 _totalBalance = pools[id].totalBalance;
                 address[] memory poolMembers = pools[id].poolMembers;
+                uint256 _startTime = pools[id].startTime;
+                uint256 _term = pools[id].term;
+                uint256 _frequency = pools[id].frequency;
                 return (
                     _owner,
-                    _maxMembers,
                     _fixedInvestment,
                     _totalBalance,
-                    poolMembers
+                    poolMembers,
+                    _startTime,
+                    _term,
+                    _frequency
                 );
             }
         }
@@ -96,7 +109,7 @@ contract DrainMoney {
     //func. mark_pool_defaulters(address, passphrase){}
 
     //func. auto cashout all if date is 30th
-    
+
     //func. cashout_all(force) only owner can cashout_all, fails if cool down not passed
 
     //func. cashout(){cashes out only the single user}
