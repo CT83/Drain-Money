@@ -4,7 +4,7 @@ const truffleAssert = require('truffle-assertions');
 const DrainMoney = artifacts.require("DrainMoney");
 
 contract("DrainMoney", () => {
-    it("Should deploy smart contract properly", async () => {
+    it("deploys smart contract properly", async () => {
         const DMContract = await DrainMoney.deployed();
         assert(DMContract.address !== '');
     })
@@ -45,8 +45,7 @@ contract("DrainMoney", accounts => {
         assert(resPoolDets[0] == accounts[0]);
         assert(resPoolDets[1] == 5);
         assert(resPoolDets[2] == 1);
-        assert(typeof (resPoolDets[3]) == typeof (1));
-
+        assert(typeof (resPoolDets[3].toNumber()) == typeof (1));
     })
 })
 
@@ -61,6 +60,26 @@ contract("DrainMoney", accounts => {
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("WrongPassPhrase", { from: accounts[0] });
         assert(resPoolDets[0] != accounts[0]);
+    })
+})
+
+
+contract("DrainMoney", accounts => {
+    it("user is able to join a pool successfully", async () => {
+        const DMContract = await DrainMoney.deployed();
+        assert(DMContract.address !== '');
+
+        //create pool
+        await DMContract.create_pool("StrongPassPhrase", 5, 1, { from: accounts[0] });
+
+        //join a pool
+        await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
+        await DMContract.join_pool("StrongPassPhrase", { from: accounts[2] });
+
+        //get pool details
+        let resPoolDets = await DMContract.getPoolDetails("StrongPassPhrase", { from: accounts[0] });
+        assert(resPoolDets[4][0] == accounts[1]);
+        assert(resPoolDets[4][1] == accounts[2]);
     })
 })
 

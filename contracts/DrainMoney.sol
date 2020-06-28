@@ -30,7 +30,6 @@ contract DrainMoney {
         //note down pay for this week
     }
 
-    //func. create_pool(passphrase){ //if name not taken, create pool}
     function create_pool(
         string memory _passphrase,
         uint256 _maxMembers,
@@ -51,6 +50,16 @@ contract DrainMoney {
     }
 
     //function join_pool(address, passphrase){}
+    function join_pool(string memory _passphrase) public returns (bool) {
+        uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
+        for (uint256 id = 0; id < pools.length; id++) {
+            if (passToPool[id] == _hashPass) {
+                pools[id].poolMembers.push(msg.sender);
+                return true;
+            }
+        }
+        return false;
+    }
 
     //func. view_pool_details balance
     function getPoolDetails(string memory _passphrase)
@@ -65,10 +74,8 @@ contract DrainMoney {
         )
     {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
-        uint256 id;
-        for (uint256 i = 0; i < pools.length; i++) {
+        for (uint256 id = 0; id < pools.length; id++) {
             if (passToPool[id] == _hashPass) {
-                id = i;
                 address _owner = pools[id].owner;
                 uint256 _maxMembers = pools[id].maxMembers;
                 uint256 _fixedInvestment = pools[id].fixedInvestment;
