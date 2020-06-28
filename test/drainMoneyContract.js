@@ -43,6 +43,9 @@ contract("DrainMoney", accounts => {
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("StrongPassPhrase", { from: accounts[0] });
         assert(resPoolDets[0] == accounts[0]);
+        assert(resPoolDets[1] == 5);
+        assert(resPoolDets[2] == 1);
+        assert(typeof (resPoolDets[3]) == typeof (1));
 
     })
 })

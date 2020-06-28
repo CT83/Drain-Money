@@ -56,7 +56,13 @@ contract DrainMoney {
     function getPoolDetails(string memory _passphrase)
         public
         view
-        returns (address, uint256)
+        returns (
+            address,
+            uint256,
+            uint256,
+            uint256,
+            address[] memory
+        )
     {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
         uint256 id;
@@ -68,7 +74,13 @@ contract DrainMoney {
                 uint256 _fixedInvestment = pools[id].fixedInvestment;
                 uint256 _totalBalance = pools[id].totalBalance;
                 address[] memory poolMembers = pools[id].poolMembers;
-                return (_owner, 1);
+                return (
+                    _owner,
+                    _maxMembers,
+                    _fixedInvestment,
+                    _totalBalance,
+                    poolMembers
+                );
             }
         }
     }
