@@ -132,4 +132,24 @@ contract("DrainMoney", accounts => {
         assert(web3.utils.fromWei(resPoolMembs[1]) == 0);
         assert(await web3.eth.getBalance(contractAddress) == contractOldBalance);
     })
-})
+
+    contract("DrainMoney", accounts => {
+        it("refunds defaulters in a pool", async () => {
+            const DMContract = await DrainMoney.deployed();
+            var contractAddress = DMContract.address;
+            await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 1, 100, { from: accounts[0] });
+            await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
+
+            //send money less than fixed investment and see if it fails
+            contractOldBalance = await web3.eth.getBalance(contractAddress);
+            try {
+                await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("0.5", "ether") });
+            } catch (err) {
+                assert(err)
+            }
+            var resPoolMembs = await DMContract.getPoolMembers(0);
+            assert(resPoolMembs[0] == accounts[1]);
+            assert(web3.utils.fromWei(resPoolMembs[1]) == 0);
+            assert(await web3.eth.getBalance(contractAddress) == contractOldBalance);
+        })
+    })

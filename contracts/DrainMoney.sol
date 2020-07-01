@@ -22,7 +22,6 @@ contract DrainMoney {
         uint256 frequency;
     }
 
-    mapping(uint256 => PoolMembers) poolMembersToId;
     mapping(uint256 => uint256) passToPool;
     address[] public poolAccts;
 
@@ -85,7 +84,6 @@ contract DrainMoney {
                     _lastPayment
                 );
                 uint256 pmId = poolMembers.push(poolMember);
-                // poolMembersToId[id] =
                 pools[id].poolMembers.push(pmId);
                 return true;
             }
@@ -147,8 +145,56 @@ contract DrainMoney {
     }
 
     //func. invest_pool(address) {check if sender is a member of the pool}
+    function invest(string memory _passphrase) public returns (bool) {
+        uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
+        for (uint256 id = 0; id < pools.length; id++) {
+            if (passToPool[id] == _hashPass) {
+                // pools[id].poolMembers.push(pmId);
+                // code to invest money
+                return true;
+            }
+        }
+        return false;
+    }
 
     //func. mark_pool_defaulters(address, passphrase){}
+    function cashout_defaulters(string memory _passphrase) public returns (bool) {
+        uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
+        for (uint256 id = 0; id < pools.length; id++) {
+            if (passToPool[id] == _hashPass) {
+                for (
+                    uint256 iter = 0;
+                    iter < pools[id].poolMembers.length;
+                    iter++
+                ) {
+                    // check if the last payment was done within the freq. time
+                    if (
+                        now -
+                            poolMembers[pools[id].poolMembers[iter]]
+                                .lastPayment >
+                        pools[id].frequency && // now - lastpayment older than frequency
+                        now >
+                        pools[id].startTime +
+                            (pools[id].frequency * pools[id].term) // now older than (start + (freq*term))
+                    ) {
+                        address payable _addr = address(
+                            uint160(
+                                poolMembers[pools[id].poolMembers[iter]]
+                                    .userAddress
+                            )
+                        );
+                        _addr.transfer(
+                            poolMembers[pools[id].poolMembers[iter]]
+                                .amtContributed
+                        );
+                    }
+                }
+
+                return true;
+            }
+        }
+        return false;
+    }
 
     //func. auto cashout all if date is 30th
 
