@@ -22,7 +22,6 @@ contract DrainMoney {
         uint256 frequency;
     }
 
-    // mapping(uint256 => Pool) poolsToAddress;
     mapping(uint256 => PoolMembers) poolMembersToId;
     mapping(uint256 => uint256) passToPool;
     address[] public poolAccts;

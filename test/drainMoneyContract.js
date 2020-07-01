@@ -110,6 +110,15 @@ contract("DrainMoney", accounts => {
         assert(resPoolMembs[0] == accounts[1]);
         assert(web3.utils.fromWei(resPoolMembs[1]) == 2);
         assert(await web3.eth.getBalance(contractAddress) > contractOldBalance);
+    })
+})
+
+contract("DrainMoney", accounts => {
+    it("rejects transactions lesser than fixed amount of the pool", async () => {
+        const DMContract = await DrainMoney.deployed();
+        var contractAddress = DMContract.address;
+        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 1, 100, { from: accounts[0] });
+        await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
 
         //send money less than fixed investment and see if it fails
         contractOldBalance = await web3.eth.getBalance(contractAddress);
@@ -118,9 +127,9 @@ contract("DrainMoney", accounts => {
         } catch (err) {
             assert(err)
         }
-        resPoolMembs = await DMContract.getPoolMembers(0);
+        var resPoolMembs = await DMContract.getPoolMembers(0);
         assert(resPoolMembs[0] == accounts[1]);
-        assert(web3.utils.fromWei(resPoolMembs[1]) == 2);
+        assert(web3.utils.fromWei(resPoolMembs[1]) == 0);
         assert(await web3.eth.getBalance(contractAddress) == contractOldBalance);
     })
 })
