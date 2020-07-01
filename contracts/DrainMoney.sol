@@ -6,7 +6,7 @@ contract DrainMoney {
     struct PoolMembers {
         address userAddress;
         uint256 amtContributed;
-        address poolAddress;
+        uint256 poolId;
     }
 
     struct Pool {
@@ -15,17 +15,19 @@ contract DrainMoney {
         uint256 fixedInvestment;
         uint256 totalBalance;
         address owner;
-        address[] poolMembers;
+        uint256[] poolMembers;
         uint256 startTime;
         uint256 term;
         uint256 frequency;
     }
 
-    mapping(address => Pool) poolsToAddress;
+    // mapping(uint256 => Pool) poolsToAddress;
+    mapping(uint256 => PoolMembers) poolMembersToId;
     mapping(uint256 => uint256) passToPool;
     address[] public poolAccts;
 
     Pool[] public pools;
+    PoolMembers[] public poolMembers;
 
     //accept money from users
     function() external payable {
@@ -47,7 +49,7 @@ contract DrainMoney {
             _fixedInvestment,
             0,
             msg.sender,
-            new address[](0),
+            new uint256[](0),
             now,
             _term,
             _frequency
@@ -61,11 +63,36 @@ contract DrainMoney {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
         for (uint256 id = 0; id < pools.length; id++) {
             if (passToPool[id] == _hashPass) {
-                pools[id].poolMembers.push(msg.sender);
+                address userAddress = msg.sender;
+                uint256 amtContributed = 0;
+                uint256 poolId = id;
+                PoolMembers memory poolMember = PoolMembers(
+                    userAddress,
+                    amtContributed,
+                    poolId
+                );
+                uint256 pmId = poolMembers.push(poolMember);
+                // poolMembersToId[id] =
+                pools[id].poolMembers.push(pmId);
                 return true;
             }
         }
         return false;
+    }
+
+    function getPoolMembers(uint256 _id)
+        public
+        view
+        returns (
+            address,
+            uint256,
+            uint256
+        )
+    {
+        address _userAddress = poolMembers[_id].userAddress;
+        uint256 _amtContributed = poolMembers[_id].amtContributed;
+        uint256 _poolId = poolMembers[_id].poolId;
+        return (_userAddress, _amtContributed, _poolId);
     }
 
     function getPoolDetails(string memory _passphrase)
@@ -75,7 +102,7 @@ contract DrainMoney {
             address,
             uint256,
             uint256,
-            address[] memory,
+            uint256[] memory,
             uint256,
             uint256,
             uint256
@@ -87,7 +114,7 @@ contract DrainMoney {
                 address _owner = pools[id].owner;
                 uint256 _fixedInvestment = pools[id].fixedInvestment;
                 uint256 _totalBalance = pools[id].totalBalance;
-                address[] memory poolMembers = pools[id].poolMembers;
+                uint256[] memory _poolMembers = pools[id].poolMembers;
                 uint256 _startTime = pools[id].startTime;
                 uint256 _term = pools[id].term;
                 uint256 _frequency = pools[id].frequency;
@@ -95,7 +122,7 @@ contract DrainMoney {
                     _owner,
                     _fixedInvestment,
                     _totalBalance,
-                    poolMembers,
+                    _poolMembers,
                     _startTime,
                     _term,
                     _frequency

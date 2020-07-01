@@ -58,7 +58,7 @@ contract("DrainMoney", accounts => {
 
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("WrongPassPhrase", { from: accounts[0] });
-        assert(resPoolDets[0] != accounts[0]);
+        assert(resPoolDets[0] == 0x0000000000000000000000000000000000000000);
     })
 })
 
@@ -77,7 +77,33 @@ contract("DrainMoney", accounts => {
 
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("StrongPassPhrase", { from: accounts[0] });
-        assert(resPoolDets[3][0] == accounts[1]);
-        assert(resPoolDets[3][1] == accounts[2]);
+        assert(resPoolDets[3][0].toNumber() == 1);
+        assert(resPoolDets[3][1].toNumber() == 2);
+
+        var resPoolMembs = await DMContract.getPoolMembers(0);
+        assert(resPoolMembs[0] == accounts[1]);
+
+        resPoolMembs = await DMContract.getPoolMembers(1);
+        assert(resPoolMembs[0] == accounts[2]);
+    })
+})
+
+contract("DrainMoney", accounts => {
+    it("records when user from a pool pays", async () => {
+        const DMContract = await DrainMoney.deployed();
+        assert(DMContract.address !== '');
+
+        //create pool
+        await DMContract.create_pool("StrongPassPhrase", 5, 1, 100, 100, { from: accounts[0] });
+
+        //join a pool
+        await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
+        await DMContract.join_pool("StrongPassPhrase", { from: accounts[2] });
+
+        let resPoolMembs = await DMContract.getPoolMembers(0);
+        assert(resPoolMembs[0] == accounts[1]);
+
+
+
     })
 })
