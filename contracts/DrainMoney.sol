@@ -7,6 +7,7 @@ contract DrainMoney {
         address userAddress;
         uint256 amtContributed;
         uint256 poolId;
+        uint256 lastPayment;
     }
 
     struct Pool {
@@ -33,6 +34,17 @@ contract DrainMoney {
     function() external payable {
         require(msg.value > 0);
         //note down pay for this week
+        for (uint256 id = 0; id < poolMembers.length; id++) {
+            address _userAddress = poolMembers[id].userAddress;
+            uint256 _fixedInvestment = pools[poolMembers[id].poolId]
+                .fixedInvestment;
+            // check if sender is part of pool, value is greater than fixed investment, cooldown has not passed
+            if (_userAddress == msg.sender) {
+                require(msg.value >= _fixedInvestment);
+                poolMembers[id].amtContributed += msg.value;
+                poolMembers[id].lastPayment = now;
+            }
+        }
     }
 
     function create_pool(
@@ -63,13 +75,15 @@ contract DrainMoney {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
         for (uint256 id = 0; id < pools.length; id++) {
             if (passToPool[id] == _hashPass) {
-                address userAddress = msg.sender;
-                uint256 amtContributed = 0;
-                uint256 poolId = id;
+                address _userAddress = msg.sender;
+                uint256 _amtContributed = 0;
+                uint256 _poolId = id;
+                uint256 _lastPayment = now;
                 PoolMembers memory poolMember = PoolMembers(
-                    userAddress,
-                    amtContributed,
-                    poolId
+                    _userAddress,
+                    _amtContributed,
+                    _poolId,
+                    _lastPayment
                 );
                 uint256 pmId = poolMembers.push(poolMember);
                 // poolMembersToId[id] =
@@ -86,13 +100,15 @@ contract DrainMoney {
         returns (
             address,
             uint256,
+            uint256,
             uint256
         )
     {
         address _userAddress = poolMembers[_id].userAddress;
         uint256 _amtContributed = poolMembers[_id].amtContributed;
         uint256 _poolId = poolMembers[_id].poolId;
-        return (_userAddress, _amtContributed, _poolId);
+        uint256 _lastPayment = poolMembers[_id].lastPayment;
+        return (_userAddress, _amtContributed, _poolId, _lastPayment);
     }
 
     function getPoolDetails(string memory _passphrase)

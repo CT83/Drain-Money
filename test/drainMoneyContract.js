@@ -89,21 +89,38 @@ contract("DrainMoney", accounts => {
 })
 
 contract("DrainMoney", accounts => {
-    it("records when user from a pool pays", async () => {
+    it("creates a record when user from a pool invests", async () => {
         const DMContract = await DrainMoney.deployed();
-        assert(DMContract.address !== '');
+        var contractAddress = DMContract.address;
+        assert(contractAddress !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, 1, 100, 100, { from: accounts[0] });
+        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 1, 100, { from: accounts[0] });
 
         //join a pool
         await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
         await DMContract.join_pool("StrongPassPhrase", { from: accounts[2] });
-
-        let resPoolMembs = await DMContract.getPoolMembers(0);
+        var resPoolMembs = await DMContract.getPoolMembers(0);
         assert(resPoolMembs[0] == accounts[1]);
 
+        //send money & check updated balance
+        var contractOldBalance = await web3.eth.getBalance(contractAddress);
+        await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("2", "ether") });
+        resPoolMembs = await DMContract.getPoolMembers(0);
+        assert(resPoolMembs[0] == accounts[1]);
+        assert(web3.utils.fromWei(resPoolMembs[1]) == 2);
+        assert(await web3.eth.getBalance(contractAddress) > contractOldBalance);
 
-
+        //send money less than fixed investment and see if it fails
+        contractOldBalance = await web3.eth.getBalance(contractAddress);
+        try {
+            await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("0.5", "ether") });
+        } catch (err) {
+            assert(err)
+        }
+        resPoolMembs = await DMContract.getPoolMembers(0);
+        assert(resPoolMembs[0] == accounts[1]);
+        assert(web3.utils.fromWei(resPoolMembs[1]) == 2);
+        assert(await web3.eth.getBalance(contractAddress) == contractOldBalance);
     })
 })
