@@ -158,7 +158,10 @@ contract DrainMoney {
     }
 
     //func. mark_pool_defaulters(address, passphrase){}
-    function cashout_defaulters(string memory _passphrase) public returns (bool) {
+    function cashout_defaulters(string memory _passphrase)
+        public
+        returns (bool)
+    {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
         for (uint256 id = 0; id < pools.length; id++) {
             if (passToPool[id] == _hashPass) {
@@ -194,6 +197,24 @@ contract DrainMoney {
             }
         }
         return false;
+    }
+
+    function getPoolIdForPass(string memory _passphrase)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
+        for (uint256 id = 0; id < pools.length; id++) {
+            if (passToPool[id] == _hashPass) {
+                return id;
+            }
+        }
+    }
+
+    //func. cashout, cashes everyone out if term has expired
+    function cashout(string memory _passphrase) public returns (bool) {
+        return true;
     }
 
     //func. auto cashout all if date is 30th
