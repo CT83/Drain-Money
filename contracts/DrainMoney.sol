@@ -1,5 +1,9 @@
 pragma solidity =0.5.16;
 
+import "./IERC20.sol";
+import "./ComptrollerInterface.sol";
+import "./CTokenInterface.sol";
+
 contract DrainMoney {
     event NewPool(uint256 poolId, address indexed owner);
 
