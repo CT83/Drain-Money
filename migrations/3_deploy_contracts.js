@@ -1,5 +1,5 @@
-var CTokenInterface = artifacts.require("CTokenInterface");
-var ComptrollerInterface = artifacts.require("ComptrollerInterface");
+// var CTokenInterface = artifacts.require("CTokenInterface");
+// var ComptrollerInterface = artifacts.require("ComptrollerInterface");
 var MyDeFiProject = artifacts.require("MyDeFiProject");
 
 module.exports = function (deployer) {
