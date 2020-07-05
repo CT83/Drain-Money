@@ -1,7 +1,10 @@
 const { assert } = require('console');
-const truffleAssert = require('truffle-assertions');
-
 const DrainMoney = artifacts.require("DrainMoney");
+
+function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 contract("DrainMoney", () => {
     it("deploys smart contract properly", async () => {
@@ -9,28 +12,6 @@ contract("DrainMoney", () => {
         assert(DMContract.address !== '');
     })
 })
-
-
-contract("DrainMoney", accounts => {
-    it("accepts eth from other addresses", async () => {
-        const DMContract = await DrainMoney.deployed();
-        assert(DMContract.address !== '');
-
-        //transfer balance to contract
-        var Web3 = require('web3');
-        const url = "http://127.0.0.1:7545";
-        var web3 = new Web3(new Web3.providers.HttpProvider(url));
-
-        var contractAddress = DMContract.address;
-        let oldBalance = await web3.eth.getBalance(contractAddress)
-        await web3.eth.sendTransaction({ from: accounts[0], to: contractAddress, value: web3.utils.toWei("3", "ether") });
-
-        let newBalance = await web3.eth.getBalance(contractAddress);
-        assert(newBalance > oldBalance);
-
-    })
-})
-
 
 contract("DrainMoney", accounts => {
     it("creates a pool and get details", async () => {
@@ -95,7 +76,7 @@ contract("DrainMoney", accounts => {
         assert(contractAddress !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 1, 100, { from: accounts[0] });
+        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 4, 100, { from: accounts[0] });
 
         //join a pool
         await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
@@ -138,19 +119,20 @@ contract("DrainMoney", accounts => {
     it("refunds defaulters in a pool", async () => {
         const DMContract = await DrainMoney.deployed();
         var contractAddress = DMContract.address;
-        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 1, 100, { from: accounts[0] });
+        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[0] });
         await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
 
-        //send money less than fixed investment and see if it fails
-        contractOldBalance = await web3.eth.getBalance(contractAddress);
+        //send money in time
+        await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("1", "ether") });
+
+        //send money later than frequency
+        await timeout(1100);
+        var error;
         try {
-            await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("0.5", "ether") });
-        } catch (err) {
-            assert(err)
+            await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("1", "ether") });
+        } catch (e) {
+            error = e;
         }
-        var resPoolMembs = await DMContract.getPoolMembers(0);
-        assert(resPoolMembs[0] == accounts[1]);
-        assert(web3.utils.fromWei(resPoolMembs[1]) == 0);
-        assert(await web3.eth.getBalance(contractAddress) == contractOldBalance);
+        assert(error)
     })
 })

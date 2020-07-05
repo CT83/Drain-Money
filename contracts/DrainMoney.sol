@@ -24,6 +24,7 @@ contract DrainMoney {
         uint256 startTime;
         uint256 term;
         uint256 frequency;
+        uint256 totalCTokens;
     }
 
     mapping(uint256 => uint256) passToPool;
@@ -35,6 +36,7 @@ contract DrainMoney {
     //accept money from users
     function() external payable {
         require(msg.value > 0);
+        bool tranSuccess = false;
         //note down pay for this week
         for (uint256 id = 0; id < poolMembers.length; id++) {
             address _userAddress = poolMembers[id].userAddress;
@@ -43,10 +45,16 @@ contract DrainMoney {
             // check if sender is part of pool, value is greater than fixed investment, cooldown has not passed
             if (_userAddress == msg.sender) {
                 require(msg.value >= _fixedInvestment);
+                require(
+                    (poolMembers[id].lastPayment +
+                        pools[poolMembers[id].poolId].frequency) >= now
+                );
                 poolMembers[id].amtContributed += msg.value;
                 poolMembers[id].lastPayment = now;
+                tranSuccess = true;
             }
         }
+        require(tranSuccess);
     }
 
     function create_pool(
@@ -66,7 +74,8 @@ contract DrainMoney {
             new uint256[](0),
             now,
             _term,
-            _frequency
+            _frequency,
+            0
         );
         uint256 id = pools.push(_pool) - 1;
         passToPool[id] = _hashPass;
@@ -204,7 +213,7 @@ contract DrainMoney {
     }
 
     function getPoolIdForPass(string memory _passphrase)
-        internal
+        public
         view
         returns (uint256)
     {
@@ -218,6 +227,7 @@ contract DrainMoney {
 
     //func. cashout, cashes everyone out if term has expired
     function cashout(string memory _passphrase) public returns (bool) {
+        //remove defaulters before cashing out for real
         return true;
     }
 
