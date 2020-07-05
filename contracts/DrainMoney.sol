@@ -175,11 +175,13 @@ contract DrainMoney {
         return false;
     }
 
-    function maintainPools() public returns (bool) {
-        //for all pools
-        //increment terms
-        //refund defaulters
-        //kick out defaulters
+    function maintainAllPools() public returns (bool) {
+        for (uint256 poolId; poolId < pools.length; poolId++) {
+            Pool memory pool = pools[poolId];
+            //increment terms
+            //refund defaulters
+            //kick out defaulters
+        }
     }
 
     function refundAndMarkDefaulters(uint256 poolId) internal returns (bool) {
@@ -271,7 +273,7 @@ contract DrainMoney {
 
     //func. cashout, cashes everyone out if term has expired
     function cashout(string memory _passphrase) public returns (bool) {
-        // mark defaulters
+        maintainAllPools();
         uint256 poolId = getPoolIdForPass(_passphrase);
         Pool memory pool = pools[poolId];
 

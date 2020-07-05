@@ -126,7 +126,7 @@ contract("DrainMoney", accounts => {
         await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("1", "ether") });
 
         //send money later than frequency
-        await timeout(1100);
+        await timeout(2000);
         var error;
         try {
             await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("1", "ether") });
