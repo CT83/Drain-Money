@@ -218,11 +218,14 @@ contract DrainMoney {
         returns (uint256)
     {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
+        bool success = false;
         for (uint256 id = 0; id < pools.length; id++) {
             if (passToPool[id] == _hashPass) {
+                success = true;
                 return id;
             }
         }
+        require(success);
     }
 
     //func. cashout, cashes everyone out if term has expired

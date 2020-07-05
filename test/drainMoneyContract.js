@@ -136,3 +136,28 @@ contract("DrainMoney", accounts => {
         assert(error)
     })
 })
+
+contract("DrainMoney", accounts => {
+    it("returns correct pool id for respective passphrase", async () => {
+        const DMContract = await DrainMoney.deployed();
+        var contractAddress = DMContract.address;
+        await DMContract.create_pool("StrongPassPhrase1", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[0] });
+        await DMContract.create_pool("StrongPassPhrase2", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[1] });
+        await DMContract.create_pool("StrongPassPhrase3", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[2] });
+
+        var id
+
+        // return poolid 3
+        id = await DMContract.getPoolIdForPass("StrongPassPhrase3");
+        assert(id.toNumber() == 2);
+
+        // return poolid 1
+        id = await DMContract.getPoolIdForPass("StrongPassPhrase1");
+        assert(id.toNumber() == 0);
+
+        // return poolid 2
+        id = await DMContract.getPoolIdForPass("StrongPassPhrase2");
+        assert(id.toNumber() == 1);
+
+    })
+})
