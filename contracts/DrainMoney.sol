@@ -7,11 +7,12 @@ import "./CTokenInterface.sol";
 contract DrainMoney {
     event NewPool(uint256 poolId, address indexed owner);
 
-    struct PoolMembers {
+    struct PoolMember {
         address userAddress;
         uint256 amtContributed;
         uint256 poolId;
         uint256 lastPayment;
+        bool defaulter;
     }
 
     struct Pool {
@@ -32,7 +33,7 @@ contract DrainMoney {
     address[] public poolAccts;
 
     Pool[] public pools;
-    PoolMembers[] public poolMembers;
+    PoolMember[] public poolMembers;
 
     //accept money from users
     function() external payable {
@@ -77,7 +78,7 @@ contract DrainMoney {
             _term,
             _frequency,
             0,
-            0
+            1
         );
         uint256 id = pools.push(_pool) - 1;
         passToPool[id] = _hashPass;
@@ -92,11 +93,13 @@ contract DrainMoney {
                 uint256 _amtContributed = 0;
                 uint256 _poolId = id;
                 uint256 _lastPayment = now;
-                PoolMembers memory poolMember = PoolMembers(
+                bool _defaulter = false;
+                PoolMember memory poolMember = PoolMember(
                     _userAddress,
                     _amtContributed,
                     _poolId,
-                    _lastPayment
+                    _lastPayment,
+                    _defaulter
                 );
                 uint256 pmId = poolMembers.push(poolMember);
                 pools[id].poolMembers.push(pmId);
@@ -179,8 +182,27 @@ contract DrainMoney {
         //kick out defaulters
     }
 
-    function refundDefaulters() public returns (bool) {
+    function refundAndMarkDefaulters(uint256 poolId) internal returns (bool) {
+        Pool memory pool = pools[poolId];
+        uint256 endTime = pool.startTime + (pool.frequency * pool.term);
 
+        if (now < endTime) {
+            for (uint256 memId = 0; memId < pool.poolMembers.length; memId++) {
+                PoolMember memory member = poolMembers[memId];
+                // check if member defaulted on the payments
+                if (
+                    member.lastPayment >=
+                    (pool.currTerm * pool.frequency) + pool.startTime
+                ) {
+                    // refund user
+                    address(uint160(member.userAddress)).transfer(
+                        member.amtContributed
+                    );
+                    // mark person as defaulter
+                    member.defaulter = true;
+                }
+            }
+        }
         return true;
     }
 
@@ -242,9 +264,36 @@ contract DrainMoney {
         require(success);
     }
 
+    function redeemCTokens(uint256 _amount) internal returns (uint256) {
+        // return eth generated from cTokens
+        return 0;
+    }
+
     //func. cashout, cashes everyone out if term has expired
     function cashout(string memory _passphrase) public returns (bool) {
-        //remove defaulters before cashing out for real
+        // mark defaulters
+        uint256 poolId = getPoolIdForPass(_passphrase);
+        Pool memory pool = pools[poolId];
+
+        // count number of defaulters
+        uint256 noOfDefaulters = 0;
+        for (uint256 memId = 0; memId < pool.poolMembers.length; memId++) {
+            PoolMember memory member = poolMembers[memId];
+            if (member.defaulter) {
+                noOfDefaulters++;
+            }
+        }
+
+        // redeem cTokens from contract
+        uint256 noOfCTokens = 0;
+        redeemCTokens(noOfCTokens);
+
+        // cash out all the defaulters
+        for (uint256 memId = 0; memId < pool.poolMembers.length; memId++) {
+            PoolMember memory member = poolMembers[memId];
+            // transfer bal. to pool members
+        }
+
         return true;
     }
 
