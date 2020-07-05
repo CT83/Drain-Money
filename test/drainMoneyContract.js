@@ -19,7 +19,7 @@ contract("DrainMoney", accounts => {
         assert(DMContract.address !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, 1, 100, 100, { from: accounts[0] });
+        await DMContract.createPool("StrongPassPhrase", 5, 1, 100, 100, { from: accounts[0] });
 
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("StrongPassPhrase", { from: accounts[0] });
@@ -35,7 +35,7 @@ contract("DrainMoney", accounts => {
         assert(DMContract.address !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, 1, 100, 100, { from: accounts[0] });
+        await DMContract.createPool("StrongPassPhrase", 5, 1, 100, 100, { from: accounts[0] });
 
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("WrongPassPhrase", { from: accounts[0] });
@@ -50,11 +50,11 @@ contract("DrainMoney", accounts => {
         assert(DMContract.address !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, 1, 100, 100, { from: accounts[0] });
+        await DMContract.createPool("StrongPassPhrase", 5, 1, 100, 100, { from: accounts[0] });
 
         //join a pool
-        await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
-        await DMContract.join_pool("StrongPassPhrase", { from: accounts[2] });
+        await DMContract.joinPool("StrongPassPhrase", { from: accounts[1] });
+        await DMContract.joinPool("StrongPassPhrase", { from: accounts[2] });
 
         //get pool details
         let resPoolDets = await DMContract.getPoolDetails("StrongPassPhrase", { from: accounts[0] });
@@ -76,11 +76,11 @@ contract("DrainMoney", accounts => {
         assert(contractAddress !== '');
 
         //create pool
-        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 4, 100, { from: accounts[0] });
+        await DMContract.createPool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 4, 100, { from: accounts[0] });
 
         //join a pool
-        await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
-        await DMContract.join_pool("StrongPassPhrase", { from: accounts[2] });
+        await DMContract.joinPool("StrongPassPhrase", { from: accounts[1] });
+        await DMContract.joinPool("StrongPassPhrase", { from: accounts[2] });
         var resPoolMembs = await DMContract.getPoolMembers(0);
         assert(resPoolMembs[0] == accounts[1]);
 
@@ -98,8 +98,8 @@ contract("DrainMoney", accounts => {
     it("rejects transactions lesser than fixed amount of the pool", async () => {
         const DMContract = await DrainMoney.deployed();
         var contractAddress = DMContract.address;
-        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 1, 100, { from: accounts[0] });
-        await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
+        await DMContract.createPool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 1, 100, { from: accounts[0] });
+        await DMContract.joinPool("StrongPassPhrase", { from: accounts[1] });
 
         //send money less than fixed investment and see if it fails
         contractOldBalance = await web3.eth.getBalance(contractAddress);
@@ -119,8 +119,8 @@ contract("DrainMoney", accounts => {
     it("refunds defaulters in a pool", async () => {
         const DMContract = await DrainMoney.deployed();
         var contractAddress = DMContract.address;
-        await DMContract.create_pool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[0] });
-        await DMContract.join_pool("StrongPassPhrase", { from: accounts[1] });
+        await DMContract.createPool("StrongPassPhrase", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[0] });
+        await DMContract.joinPool("StrongPassPhrase", { from: accounts[1] });
 
         //send money in time
         await web3.eth.sendTransaction({ from: accounts[1], to: contractAddress, value: web3.utils.toWei("1", "ether") });
@@ -141,9 +141,9 @@ contract("DrainMoney", accounts => {
     it("returns correct pool id for respective passphrase", async () => {
         const DMContract = await DrainMoney.deployed();
         var contractAddress = DMContract.address;
-        await DMContract.create_pool("StrongPassPhrase1", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[0] });
-        await DMContract.create_pool("StrongPassPhrase2", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[1] });
-        await DMContract.create_pool("StrongPassPhrase3", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[2] });
+        await DMContract.createPool("StrongPassPhrase1", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[0] });
+        await DMContract.createPool("StrongPassPhrase2", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[1] });
+        await DMContract.createPool("StrongPassPhrase3", 5, web3.utils.toWei("1", "ether"), 4, 1, { from: accounts[2] });
 
         var id
 

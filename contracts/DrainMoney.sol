@@ -25,6 +25,7 @@ contract DrainMoney {
         uint256 term;
         uint256 frequency;
         uint256 totalCTokens;
+        uint256 currTerm;
     }
 
     mapping(uint256 => uint256) passToPool;
@@ -57,7 +58,7 @@ contract DrainMoney {
         require(tranSuccess);
     }
 
-    function create_pool(
+    function createPool(
         string memory _passphrase,
         uint256 _maxMembers,
         uint256 _fixedInvestment,
@@ -75,6 +76,7 @@ contract DrainMoney {
             now,
             _term,
             _frequency,
+            0,
             0
         );
         uint256 id = pools.push(_pool) - 1;
@@ -82,7 +84,7 @@ contract DrainMoney {
         emit NewPool(id, msg.sender);
     }
 
-    function join_pool(string memory _passphrase) public returns (bool) {
+    function joinPool(string memory _passphrase) public returns (bool) {
         uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
         for (uint256 id = 0; id < pools.length; id++) {
             if (passToPool[id] == _hashPass) {
@@ -168,6 +170,18 @@ contract DrainMoney {
             }
         }
         return false;
+    }
+
+    function maintainPools() public returns (bool) {
+        //for all pools
+        //increment terms
+        //refund defaulters
+        //kick out defaulters
+    }
+
+    function refundDefaulters() public returns (bool) {
+
+        return true;
     }
 
     //func. mark_pool_defaulters(address, passphrase){}
