@@ -177,11 +177,16 @@ contract DrainMoney {
 
     function maintainAllPools() public returns (bool) {
         for (uint256 poolId; poolId < pools.length; poolId++) {
-            Pool memory pool = pools[poolId];
-            //increment terms
-            //refund defaulters
-            //kick out defaulters
+            // Pool memory pool = pools[poolId];
+            setPoolTerms(poolId);
+            refundAndMarkDefaulters(poolId);
         }
+    }
+
+    function setPoolTerms(uint256 poolId) public returns (bool) {
+        Pool memory pool = pools[poolId];
+        pool.currTerm = (now - pool.startTime);
+        return true;
     }
 
     function refundAndMarkDefaulters(uint256 poolId) internal returns (bool) {
@@ -206,48 +211,6 @@ contract DrainMoney {
             }
         }
         return true;
-    }
-
-    //func. mark_pool_defaulters(address, passphrase){}
-    function cashout_defaulters(string memory _passphrase)
-        public
-        returns (bool)
-    {
-        uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
-        for (uint256 id = 0; id < pools.length; id++) {
-            if (passToPool[id] == _hashPass) {
-                for (
-                    uint256 iter = 0;
-                    iter < pools[id].poolMembers.length;
-                    iter++
-                ) {
-                    // check if the last payment was done within the freq. time
-                    if (
-                        now -
-                            poolMembers[pools[id].poolMembers[iter]]
-                                .lastPayment >
-                        pools[id].frequency && // now - lastpayment older than frequency
-                        now >
-                        pools[id].startTime +
-                            (pools[id].frequency * pools[id].term) // now older than (start + (freq*term))
-                    ) {
-                        address payable _addr = address(
-                            uint160(
-                                poolMembers[pools[id].poolMembers[iter]]
-                                    .userAddress
-                            )
-                        );
-                        _addr.transfer(
-                            poolMembers[pools[id].poolMembers[iter]]
-                                .amtContributed
-                        );
-                    }
-                }
-
-                return true;
-            }
-        }
-        return false;
     }
 
     function getPoolIdForPass(string memory _passphrase)
@@ -298,12 +261,6 @@ contract DrainMoney {
 
         return true;
     }
-
-    //func. auto cashout all if date is 30th
-
-    //func. cashout_all(force) only owner can cashout_all, fails if cool down not passed
-
-    //func. cashout(){cashes out only the single user}
 
     function getBalance() public view returns (uint256) {
         return address(this).balance;
