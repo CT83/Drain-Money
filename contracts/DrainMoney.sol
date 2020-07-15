@@ -304,10 +304,10 @@ contract DrainMoney {
         returns (uint256)
     {
         // make sure the contract has enough money
-        require(address(this).balance >= _value);
+        // require(address(this).balance >= _value);
         CEth cToken = CEth(cEtherContract);
         uint256 prevCBal = cToken.balanceOf(address(this));
-        cToken.mint.value(_value).gas(250000)();
+        cToken.mint.value(_value).gas(1)();
         uint256 mintedCToken = cToken.balanceOf(address(this)) - prevCBal;
         return mintedCToken;
     }
@@ -315,6 +315,7 @@ contract DrainMoney {
     function invest(string memory _passphrase) public returns (bool) {
         uint256 poolId = getPoolIdForPass(_passphrase);
         Pool memory pool = pools[poolId];
+        // require(pool.owner == msg.sender); // make sure pool owner is issuing the invest command
         uint256 mintedCTokens = _supplyEthToCompound(pool.totalBalance);
         pool.totalBalance = 0;
         pool.totalCTokens += mintedCTokens;
