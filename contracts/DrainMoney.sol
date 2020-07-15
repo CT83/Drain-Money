@@ -1,11 +1,140 @@
-pragma solidity =0.5.16;
+pragma solidity >=0.5.16;
 
-import "./IERC20.sol";
-import "./ComptrollerInterface.sol";
-import "./CTokenInterface.sol";
+interface Erc20 {
+    function approve(address, uint256) external returns (bool);
+
+    function transfer(address, uint256) external returns (bool);
+}
+
+interface CErc20 {
+    function mint(uint256) external returns (uint256);
+
+    function exchangeRateCurrent() external returns (uint256);
+
+    function supplyRatePerBlock() external returns (uint256);
+
+    function redeem(uint256) external returns (uint256);
+
+    function redeemUnderlying(uint256) external returns (uint256);
+}
+
+interface CEth {
+    function mint() external payable;
+
+    function exchangeRateCurrent() external returns (uint256);
+
+    function supplyRatePerBlock() external returns (uint256);
+
+    function redeem(uint256) external returns (uint256);
+
+    function redeemUnderlying(uint256) external returns (uint256);
+}
 
 contract DrainMoney {
     event NewPool(uint256 poolId, address indexed owner);
+
+    event MyLog(string, uint256);
+
+    function supplyEthToCompound(address payable _cEtherContract)
+        public
+        payable
+        returns (bool)
+    {
+        // Create a reference to the corresponding cToken contract
+        CEth cToken = CEth(_cEtherContract);
+
+        // Amount of current exchange rate from cToken to underlying
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+        emit MyLog("Exchange Rate (scaled up by 1e18): ", exchangeRateMantissa);
+
+        // Amount added to you supply balance this block
+        uint256 supplyRateMantissa = cToken.supplyRatePerBlock();
+        emit MyLog("Supply Rate: (scaled up by 1e18)", supplyRateMantissa);
+
+        cToken.mint.value(msg.value).gas(250000)();
+        return true;
+    }
+
+    function supplyErc20ToCompound(
+        address _erc20Contract,
+        address _cErc20Contract,
+        uint256 _numTokensToSupply
+    ) public returns (uint256) {
+        // Create a reference to the underlying asset contract, like DAI.
+        Erc20 underlying = Erc20(_erc20Contract);
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CErc20 cToken = CErc20(_cErc20Contract);
+
+        // Amount of current exchange rate from cToken to underlying
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+        emit MyLog("Exchange Rate (scaled up by 1e18): ", exchangeRateMantissa);
+
+        // Amount added to you supply balance this block
+        uint256 supplyRateMantissa = cToken.supplyRatePerBlock();
+        emit MyLog("Supply Rate: (scaled up by 1e18)", supplyRateMantissa);
+
+        // Approve transfer on the ERC20 contract
+        underlying.approve(_cErc20Contract, _numTokensToSupply);
+
+        // Mint cTokens
+        uint256 mintResult = cToken.mint(_numTokensToSupply);
+        return mintResult;
+    }
+
+    function redeemCErc20Tokens(
+        uint256 amount,
+        bool redeemType,
+        address _cErc20Contract
+    ) public returns (bool) {
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CErc20 cToken = CErc20(_cErc20Contract);
+
+        // `amount` is scaled up by 1e18 to avoid decimals
+
+        uint256 redeemResult;
+
+        if (redeemType == true) {
+            // Retrieve your asset based on a cToken amount
+            redeemResult = cToken.redeem(amount);
+        } else {
+            // Retrieve your asset based on an amount of the asset
+            redeemResult = cToken.redeemUnderlying(amount);
+        }
+
+        // Error codes are listed here:
+        // https://compound.finance/developers/ctokens#ctoken-error-codes
+        emit MyLog("If this is not 0, there was an error", redeemResult);
+
+        return true;
+    }
+
+    function redeemCEth(
+        uint256 amount,
+        bool redeemType,
+        address _cEtherContract
+    ) public returns (bool) {
+        // Create a reference to the corresponding cToken contract
+        CEth cToken = CEth(_cEtherContract);
+
+        // `amount` is scaled up by 1e18 to avoid decimals
+
+        uint256 redeemResult;
+
+        if (redeemType == true) {
+            // Retrieve your asset based on a cToken amount
+            redeemResult = cToken.redeem(amount);
+        } else {
+            // Retrieve your asset based on an amount of the asset
+            redeemResult = cToken.redeemUnderlying(amount);
+        }
+
+        // Error codes are listed here:
+        // https://compound.finance/docs/ctokens#ctoken-error-codes
+        emit MyLog("If this is not 0, there was an error", redeemResult);
+
+        return true;
+    }
 
     struct PoolMember {
         address userAddress;
@@ -49,10 +178,11 @@ contract DrainMoney {
                 require(msg.value >= _fixedInvestment);
                 require(
                     (poolMembers[id].lastPayment +
-                        pools[poolMembers[id].poolId].frequency) >= now
+                        pools[poolMembers[id].poolId].frequency) >=
+                        block.timestamp
                 );
                 poolMembers[id].amtContributed += msg.value;
-                poolMembers[id].lastPayment = now;
+                poolMembers[id].lastPayment = block.timestamp;
                 tranSuccess = true;
             }
         }
@@ -74,7 +204,7 @@ contract DrainMoney {
             0,
             msg.sender,
             new uint256[](0),
-            now,
+            block.timestamp,
             _term,
             _frequency,
             0,
@@ -92,7 +222,7 @@ contract DrainMoney {
                 address _userAddress = msg.sender;
                 uint256 _amtContributed = 0;
                 uint256 _poolId = id;
-                uint256 _lastPayment = now;
+                uint256 _lastPayment = block.timestamp;
                 bool _defaulter = false;
                 PoolMember memory poolMember = PoolMember(
                     _userAddress,
@@ -164,15 +294,8 @@ contract DrainMoney {
 
     //func. invest_pool(address) {check if sender is a member of the pool}
     function invest(string memory _passphrase) public returns (bool) {
-        uint256 _hashPass = uint256(keccak256(abi.encodePacked(_passphrase)));
-        for (uint256 id = 0; id < pools.length; id++) {
-            if (passToPool[id] == _hashPass) {
-                // pools[id].poolMembers.push(pmId);
-                // code to invest money
-                return true;
-            }
-        }
-        return false;
+        uint256 poolId = getPoolIdForPass(_passphrase);
+        Pool memory pool = pools[poolId];
     }
 
     function maintainAllPools() public returns (bool) {
@@ -185,7 +308,7 @@ contract DrainMoney {
 
     function setPoolTerms(uint256 poolId) public returns (bool) {
         Pool memory pool = pools[poolId];
-        pool.currTerm = (now - pool.startTime);
+        pool.currTerm = (block.timestamp - pool.startTime);
         return true;
     }
 
@@ -193,7 +316,7 @@ contract DrainMoney {
         Pool memory pool = pools[poolId];
         uint256 endTime = pool.startTime + (pool.frequency * pool.term);
 
-        if (now < endTime) {
+        if (block.timestamp < endTime) {
             for (uint256 memId = 0; memId < pool.poolMembers.length; memId++) {
                 PoolMember memory member = poolMembers[memId];
                 // check if member defaulted on the payments
