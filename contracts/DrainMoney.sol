@@ -28,10 +28,69 @@ interface CEth {
     function redeem(uint256) external returns (uint256);
 
     function redeemUnderlying(uint256) external returns (uint256);
+
+    // Added balanceOf
+    function balanceOf(address owner) external view returns (uint256 balance);
 }
 
 contract DrainMoney {
     event NewPool(uint256 poolId, address indexed owner);
+
+    address payable cEtherContract = address(0);
+
+    struct PoolMember {
+        address userAddress;
+        uint256 amtContributed;
+        uint256 poolId;
+        uint256 lastPayment;
+        bool defaulter;
+    }
+
+    struct Pool {
+        uint256 hashPass;
+        uint256 maxMembers;
+        uint256 fixedInvestment;
+        uint256 totalBalance;
+        address owner;
+        uint256[] poolMembers;
+        uint256 startTime;
+        uint256 term;
+        uint256 frequency;
+        uint256 totalCTokens;
+        uint256 currTerm;
+    }
+
+    mapping(uint256 => uint256) passToPool;
+    address[] public poolAccts;
+
+    Pool[] public pools;
+    PoolMember[] public poolMembers;
+
+    //accept money from users
+    function() external payable {
+        require(msg.value > 0);
+        bool tranSuccess = false;
+        //note down pay for this week
+        for (uint256 id = 0; id < poolMembers.length; id++) {
+            address _userAddress = poolMembers[id].userAddress;
+            uint256 _fixedInvestment = pools[poolMembers[id].poolId]
+                .fixedInvestment;
+            // check if sender is part of pool, value is greater than fixed investment, cooldown has not passed
+            if (_userAddress == msg.sender) {
+                require(msg.value >= _fixedInvestment);
+                require(
+                    (poolMembers[id].lastPayment +
+                        pools[poolMembers[id].poolId].frequency) >=
+                        block.timestamp
+                );
+                poolMembers[id].amtContributed += msg.value;
+                poolMembers[id].lastPayment = block.timestamp;
+                pools[poolMembers[id].poolId].totalBalance += msg.value;
+                tranSuccess = true;
+            }
+        }
+        require(tranSuccess);
+    }
 
     event MyLog(string, uint256);
 
@@ -134,59 +193,6 @@ contract DrainMoney {
         emit MyLog("If this is not 0, there was an error", redeemResult);
 
         return true;
-    }
-
-    struct PoolMember {
-        address userAddress;
-        uint256 amtContributed;
-        uint256 poolId;
-        uint256 lastPayment;
-        bool defaulter;
-    }
-
-    struct Pool {
-        uint256 hashPass;
-        uint256 maxMembers;
-        uint256 fixedInvestment;
-        uint256 totalBalance;
-        address owner;
-        uint256[] poolMembers;
-        uint256 startTime;
-        uint256 term;
-        uint256 frequency;
-        uint256 totalCTokens;
-        uint256 currTerm;
-    }
-
-    mapping(uint256 => uint256) passToPool;
-    address[] public poolAccts;
-
-    Pool[] public pools;
-    PoolMember[] public poolMembers;
-
-    //accept money from users
-    function() external payable {
-        require(msg.value > 0);
-        bool tranSuccess = false;
-        //note down pay for this week
-        for (uint256 id = 0; id < poolMembers.length; id++) {
-            address _userAddress = poolMembers[id].userAddress;
-            uint256 _fixedInvestment = pools[poolMembers[id].poolId]
-                .fixedInvestment;
-            // check if sender is part of pool, value is greater than fixed investment, cooldown has not passed
-            if (_userAddress == msg.sender) {
-                require(msg.value >= _fixedInvestment);
-                require(
-                    (poolMembers[id].lastPayment +
-                        pools[poolMembers[id].poolId].frequency) >=
-                        block.timestamp
-                );
-                poolMembers[id].amtContributed += msg.value;
-                poolMembers[id].lastPayment = block.timestamp;
-                tranSuccess = true;
-            }
-        }
-        require(tranSuccess);
     }
 
     function createPool(
@@ -292,10 +298,26 @@ contract DrainMoney {
         }
     }
 
-    //func. invest_pool(address) {check if sender is a member of the pool}
+    function _supplyEthToCompound(uint256 _value)
+        public
+        payable
+        returns (uint256)
+    {
+        // make sure the contract has enough money
+        require(address(this).balance >= _value);
+        CEth cToken = CEth(cEtherContract);
+        uint256 prevCBal = cToken.balanceOf(address(this));
+        cToken.mint.value(_value).gas(250000)();
+        uint256 mintedCToken = cToken.balanceOf(address(this)) - prevCBal;
+        return mintedCToken;
+    }
+
     function invest(string memory _passphrase) public returns (bool) {
         uint256 poolId = getPoolIdForPass(_passphrase);
         Pool memory pool = pools[poolId];
+        uint256 mintedCTokens = _supplyEthToCompound(pool.totalBalance);
+        pool.totalBalance = 0;
+        pool.totalCTokens += mintedCTokens;
     }
 
     function maintainAllPools() public returns (bool) {

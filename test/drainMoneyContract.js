@@ -70,7 +70,7 @@ contract("DrainMoney", accounts => {
 })
 
 contract("DrainMoney", accounts => {
-    it("creates a record when user from a pool invests", async () => {
+    it("creates a record when user from a pool adds money", async () => {
         const DMContract = await DrainMoney.deployed();
         var contractAddress = DMContract.address;
         assert(contractAddress !== '');
